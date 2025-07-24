@@ -1,0 +1,124 @@
+export class QueryBuilder {
+  private table: string;
+  private fields: string[] = ['*'];
+  private conditions: { field: string; operator: string; value: any }[] = [];
+  private orderBy: { field: string; direction: 'ASC' | 'DESC' } | null = null;
+
+  private joins: {
+    table: string;
+    alias?: string;
+    on: string;
+    type: 'INNER' | 'LEFT' | 'RIGHT';
+  }[] = [];
+
+  constructor(table: string) {
+    this.table = table;
+  }
+
+  select(fields: string[]) {
+    this.fields = fields;
+    return this;
+  }
+
+  join(
+    table: string,
+    on: string,
+    type: 'INNER' | 'LEFT' | 'RIGHT' = 'INNER',
+    alias?: string,
+  ) {
+    this.joins.push({ table, on, type, alias });
+    return this;
+  }
+
+  where(field: string, operator: string, value: any) {
+    this.conditions.push({ field, operator, value });
+    return this;
+  }
+
+  orderByField(field: string, direction: 'ASC' | 'DESC' = 'ASC') {
+    this.orderBy = { field, direction };
+    return this;
+  }
+
+  build() {
+    let sql = `SELECT ${this.fields.join(', ')} FROM ${this.table}`;
+
+    // JOIN clause
+    for (const join of this.joins) {
+      const aliasPart = join.alias ? ` ${join.alias}` : '';
+      sql += ` ${join.type} JOIN ${join.table}${aliasPart} ON ${join.on}`;
+    }
+
+    const params: any[] = [];
+
+    // WHERE clause
+    if (this.conditions.length > 0) {
+      sql += ' WHERE ';
+      const whereClauses: string[] = [];
+
+      for (const [index, condition] of this.conditions.entries()) {
+        whereClauses.push(
+          `${condition.field} ${condition.operator} $${index + 1}`,
+        );
+        params.push(condition.value);
+      }
+
+      sql += whereClauses.join(' AND ');
+    }
+
+    // ORDER BY clause
+    if (this.orderBy) {
+      sql += ` ORDER BY ${this.orderBy.field} ${this.orderBy.direction}`;
+    }
+
+    return { sql, params };
+  }
+
+  insert(data: Record<string, any>) {
+    const columns = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = values.map((_, i) => `$${i + 1}`);
+
+    const sql = `INSERT INTO ${this.table} (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING *`;
+
+    return {
+      sql,
+      params: values,
+    };
+  }
+
+  update(data: Record<string, any>) {
+    const columns = Object.keys(data);
+    const values = Object.values(data);
+    let paramCount = 1;
+
+    const setClauses = columns.map((col) => `${col} = $${paramCount++}`);
+
+    let sql = `UPDATE ${this.table} SET ${setClauses.join(', ')}`;
+
+    const params = [...values];
+
+    if (this.conditions.length > 0) {
+      sql += ' WHERE ';
+      const whereClauses: string[] = [];
+
+      for (const condition of this.conditions) {
+        whereClauses.push(
+          `${condition.field} ${condition.operator} $${paramCount++}`,
+        );
+        params.push(condition.value);
+      }
+
+      sql += whereClauses.join(' AND ');
+    } else {
+      throw new Error('UPDATE without WHERE clause is not allowed for safety.');
+    }
+
+    sql += ' RETURNING *';
+
+    return {
+      sql,
+      params,
+    };
+  }
+}
