@@ -3,6 +3,8 @@ export class QueryBuilder {
   private fields: string[] = ['*'];
   private conditions: { field: string; operator: string; value: any }[] = [];
   private orderBy: { field: string; direction: 'ASC' | 'DESC' } | null = null;
+  private limit: number | null = null;
+  private offset: number | null = null;
 
   private joins: {
     table: string;
@@ -40,6 +42,16 @@ export class QueryBuilder {
     return this;
   }
 
+  limitRecords(limit: number) {
+    this.limit = limit;
+    return this;
+  }
+
+  offsetRecords(offset: number) {
+    this.offset = offset;
+    return this;
+  }
+
   build() {
     let sql = `SELECT ${this.fields.join(', ')} FROM ${this.table}`;
 
@@ -69,6 +81,16 @@ export class QueryBuilder {
     // ORDER BY clause
     if (this.orderBy) {
       sql += ` ORDER BY ${this.orderBy.field} ${this.orderBy.direction}`;
+    }
+
+    // LIMIT clause
+    if (this.limit) {
+      sql += ` LIMIT ${this.limit}`;
+    }
+
+    // OFFSET clause
+    if (this.offset) {
+      sql += ` OFFSET ${this.offset}`;
     }
 
     return { sql, params };

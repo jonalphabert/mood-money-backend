@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Pool, PoolConfig } from 'pg';
 import { ConfigService } from '@nestjs/config';
+import { CustomDatabaseError } from 'src/utils/custom_error';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
@@ -30,7 +31,7 @@ export class DatabaseService implements OnModuleInit {
       console.log('Database connected successfully');
     } catch (error) {
       console.error('Database connection error', error);
-      throw error;
+      throw new CustomDatabaseError('Database connection error');
     }
   }
 
@@ -38,6 +39,8 @@ export class DatabaseService implements OnModuleInit {
     const client = await this.pool.connect();
     try {
       return await client.query(sql, params);
+    } catch (error) {
+      throw new CustomDatabaseError(error.message);
     } finally {
       client.release();
     }

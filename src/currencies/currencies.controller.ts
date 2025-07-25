@@ -6,8 +6,13 @@ import {
   Param,
   Put,
   Delete,
+  UsePipes,
+  Query,
 } from '@nestjs/common';
 import { CurrenciesService } from './currencies.service';
+import { ValidationPipe } from '@nestjs/common/pipes';
+import { CreateCurrencyDto } from './dto/create-currency.dto';
+import { UpdateCurrencyDto } from './dto/update-currency.dto';
 
 @Controller('currencies')
 export class CurrenciesController {
@@ -18,18 +23,34 @@ export class CurrenciesController {
     return this.currenciesService.findAll();
   }
 
+  @Get('search/')
+  async searchByName(
+    @Query() queryParams: { name: string; page: number; limit: number },
+  ) {
+    return this.currenciesService.searchByName(
+      queryParams.name,
+      queryParams.page,
+      queryParams.limit,
+    );
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.currenciesService.findById(parseInt(id));
   }
 
   @Post()
-  async create(@Body() currencyData: any) {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async create(@Body() currencyData: CreateCurrencyDto) {
     return this.currenciesService.create(currencyData);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() currencyData: any) {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async update(
+    @Param('id') id: string,
+    @Body() currencyData: UpdateCurrencyDto,
+  ) {
     return this.currenciesService.update(parseInt(id), currencyData);
   }
 
