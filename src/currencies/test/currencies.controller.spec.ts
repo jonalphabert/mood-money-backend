@@ -1,17 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CurrenciesController } from '../currencies.controller';
 import { CurrenciesService } from '../currencies.service';
+import { Currency } from '../currency.entity';
 
 describe('CurrenciesController', () => {
   let controller: CurrenciesController;
   let service: CurrenciesService;
+
+  const mockDatabaseRow = {
+    currency_id: 1,
+    currency_code: 'USD',
+    currency_name: 'US Dollar',
+    currency_symbol: '$',
+    is_active: true,
+    created_at: new Date(),
+  };
+
+  const mockCurrency = Currency.fromDatabaseRow(mockDatabaseRow);
 
   const mockCurrenciesService = {
     create: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
     update: jest.fn(),
-    remove: jest.fn(),
     searchByName: jest.fn(),
   };
 
@@ -42,48 +53,38 @@ describe('CurrenciesController', () => {
         currency_symbol: '$',
       };
 
-      const expectedResult = {
-        id: 1,
-        ...createCurrencyDto,
-      };
+      mockCurrenciesService.create.mockResolvedValue(mockCurrency);
 
-      jest.spyOn(service, 'create').mockResolvedValue(expectedResult);
+      const result = await controller.create(createCurrencyDto);
 
-      expect(await controller.create(createCurrencyDto)).toBe(expectedResult);
-      expect(service.create).toHaveBeenCalledWith(createCurrencyDto);
+      expect(result).toBe(mockCurrency);
+      expect(mockCurrenciesService.create).toHaveBeenCalledWith(
+        createCurrencyDto,
+      );
     });
   });
 
   describe('findAll', () => {
     it('should return array of currencies', async () => {
-      const expectedResult = [
-        {
-          currency_id: 1,
-          currency_name: 'US Dollar',
-          currency_code: 'USD',
-          currency_symbol: '$',
-        },
-      ];
+      const expectedResult = [mockCurrency];
 
-      jest.spyOn(service, 'findAll').mockResolvedValue(expectedResult);
+      mockCurrenciesService.findAll.mockResolvedValue(expectedResult);
 
-      expect(await controller.findAll()).toBe(expectedResult);
-      expect(service.findAll).toHaveBeenCalled();
+      const result = await controller.findAll();
+
+      expect(result).toBe(expectedResult);
+      expect(mockCurrenciesService.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
     it('should return a single currency', async () => {
-      const expectedResult = {
-        id: 1,
-        name: 'US Dollar',
-        code: 'USD',
-        symbol: '$',
-      };
+      mockCurrenciesService.findById.mockResolvedValue(mockCurrency);
 
-      jest.spyOn(service, 'findById').mockResolvedValue(expectedResult);
+      const result = await controller.findOne('1');
 
-      expect(await controller.findOne('1')).toBe(expectedResult);
+      expect(result).toBe(mockCurrency);
+      expect(mockCurrenciesService.findById).toHaveBeenCalledWith(1);
     });
   });
 
@@ -95,39 +96,38 @@ describe('CurrenciesController', () => {
         currency_symbol: '€',
       };
 
-      const expectedResult = {
-        id: 1,
+      const updatedCurrency = Currency.fromDatabaseRow({
+        ...mockDatabaseRow,
         ...updateCurrencyDto,
-      };
+      });
 
-      jest.spyOn(service, 'update').mockResolvedValue(expectedResult);
+      mockCurrenciesService.update.mockResolvedValue(updatedCurrency);
 
-      expect(await controller.update('1', updateCurrencyDto)).toBe(
-        expectedResult,
+      const result = await controller.update('1', updateCurrencyDto);
+
+      expect(result).toBe(updatedCurrency);
+      expect(mockCurrenciesService.update).toHaveBeenCalledWith(
+        1,
+        updateCurrencyDto,
       );
-      expect(service.update).toHaveBeenCalledWith(1, updateCurrencyDto);
     });
   });
 
-  describe('remove', () => {
-    it('should delete a currency', async () => {
-      const updateCurrencyDto = {
+  describe('delete', () => {
+    it('should soft delete a currency', async () => {
+      const deactivatedCurrency = Currency.fromDatabaseRow({
+        ...mockDatabaseRow,
         is_active: false,
-      };
+      });
 
-      const expectedResult = {
-        id: 1,
-        name: 'US Dollar',
-        code: 'USD',
-        symbol: '$',
+      mockCurrenciesService.update.mockResolvedValue(deactivatedCurrency);
+
+      const result = await controller.delete('1');
+
+      expect(result).toBe(deactivatedCurrency);
+      expect(mockCurrenciesService.update).toHaveBeenCalledWith(1, {
         is_active: false,
-      };
-
-      jest.spyOn(service, 'update').mockResolvedValue(expectedResult);
-
-      expect(await controller.update('1', updateCurrencyDto)).toBe(
-        expectedResult,
-      );
+      });
     });
   });
 
@@ -140,37 +140,44 @@ describe('CurrenciesController', () => {
         total: 0,
       };
 
-      jest.spyOn(service, 'searchByName').mockResolvedValue(expectedResult);
+      mockCurrenciesService.searchByName.mockResolvedValue(expectedResult);
 
-      expect(
-        await controller.searchByName({ name: 'USD', page: 1, limit: 10 }),
-      ).toBe(expectedResult);
+      const result = await controller.searchByName({
+        name: 'USD',
+        page: 1,
+        limit: 10,
+      });
 
-      expect(service.searchByName).toHaveBeenCalledWith('USD', 1, 10);
+      expect(result).toBe(expectedResult);
+      expect(mockCurrenciesService.searchByName).toHaveBeenCalledWith(
+        'USD',
+        1,
+        10,
+      );
     });
 
     it('should return array of currencies when found', async () => {
       const expectedResult = {
-        data: [
-          {
-            currency_id: 1,
-            currency_name: 'US Dollar',
-            currency_code: 'USD',
-            currency_symbol: '$',
-          },
-        ],
+        data: [mockCurrency],
         page: 1,
         limit: 10,
         total: 1,
       };
 
-      jest.spyOn(service, 'searchByName').mockResolvedValue(expectedResult);
+      mockCurrenciesService.searchByName.mockResolvedValue(expectedResult);
 
-      expect(
-        await controller.searchByName({ name: 'USD', page: 1, limit: 10 }),
-      ).toBe(expectedResult);
+      const result = await controller.searchByName({
+        name: 'USD',
+        page: 1,
+        limit: 10,
+      });
 
-      expect(service.searchByName).toHaveBeenCalledWith('USD', 1, 10);
+      expect(result).toBe(expectedResult);
+      expect(mockCurrenciesService.searchByName).toHaveBeenCalledWith(
+        'USD',
+        1,
+        10,
+      );
     });
   });
 });

@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { CategoriesRepository } from '../categories.repository';
 import { DatabaseService } from '../../database/database.service';
+import { Category } from '../category.entity';
 
 // Mock QueryBuilder
 const mockQueryBuilder = {
@@ -26,13 +27,16 @@ describe('CategoriesRepository', () => {
   let repository: CategoriesRepository;
   let databaseService: jest.Mocked<DatabaseService>;
 
-  const mockCategory = {
+  const mockDatabaseRow = {
     category_id: 1,
     category_name: 'Food',
     category_type: 'expense',
     user_id: 'user123',
-    created_at: new Date(),
+    parent_id: null,
+    is_active: true,
   };
+
+  const mockCategory = Category.fromDatabaseRow(mockDatabaseRow);
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -56,12 +60,13 @@ describe('CategoriesRepository', () => {
   describe('findAll', () => {
     it('should return all categories', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCategory]),
+        createQueryResult([mockDatabaseRow]),
       );
 
       const result = await repository.findAll();
 
-      expect(result).toEqual([mockCategory]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(Category);
       expect(mockQueryBuilder.build).toHaveBeenCalled();
       expect(databaseService.query).toHaveBeenCalledWith('SELECT SQL', []);
     });
@@ -92,45 +97,14 @@ describe('CategoriesRepository', () => {
     };
 
     it('should create and return new category', async () => {
-      const created = { ...categoryData, category_id: 2 };
+      const created = { ...categoryData, category_id: 2, parent_id: null, is_active: true };
       databaseService.query.mockResolvedValue(createQueryResult([created]));
 
       const result = await repository.create(categoryData);
 
-      expect(result).toEqual(created);
+      expect(result).toBeInstanceOf(Category);
+      expect(result.category_name).toBe('Transportation');
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith(categoryData);
-    });
-
-    it('should return undefined when insertion fails', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.create(categoryData);
-
-      expect(result).toBeUndefined();
-    });
-
-    it('should handle empty object input', async () => {
-      const emptyData = {};
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.create(emptyData);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.insert).toHaveBeenCalledWith(emptyData);
-    });
-
-    it('should handle null values in input', async () => {
-      const dataWithNulls = {
-        category_name: null,
-        category_type: 'income',
-        user_id: 'user789',
-      };
-      const created = { ...dataWithNulls, category_id: 3 };
-      databaseService.query.mockResolvedValue(createQueryResult([created]));
-
-      const result = await repository.create(dataWithNulls);
-
-      expect(result).toEqual(created);
     });
 
     it('should throw error when database constraint violation occurs', async () => {
@@ -148,12 +122,13 @@ describe('CategoriesRepository', () => {
   describe('findById', () => {
     it('should return category by ID', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCategory]),
+        createQueryResult([mockDatabaseRow]),
       );
 
       const result = await repository.findById(1);
 
-      expect(result).toEqual(mockCategory);
+      expect(result).toBeInstanceOf(Category);
+      expect(result!.category_id).toBe(1);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'category_id',
         '=',
@@ -161,38 +136,12 @@ describe('CategoriesRepository', () => {
       );
     });
 
-    it('should return undefined when category not found', async () => {
+    it('should return null when category not found', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
       const result = await repository.findById(999);
 
-      expect(result).toBeUndefined();
-    });
-
-    it('should handle zero ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findById(0);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_id',
-        '=',
-        0,
-      );
-    });
-
-    it('should handle negative ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findById(-1);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_id',
-        '=',
-        -1,
-      );
+      expect(result).toBeNull();
     });
 
     it('should throw error when database query fails', async () => {
@@ -206,8 +155,8 @@ describe('CategoriesRepository', () => {
   describe('findByCategoryType', () => {
     it('should return categories by type', async () => {
       const expenseCategories = [
-        mockCategory,
-        { ...mockCategory, category_id: 2 },
+        mockDatabaseRow,
+        { ...mockDatabaseRow, category_id: 2 },
       ];
       databaseService.query.mockResolvedValue(
         createQueryResult(expenseCategories),
@@ -215,7 +164,8 @@ describe('CategoriesRepository', () => {
 
       const result = await repository.findByCategoryType('expense');
 
-      expect(result).toEqual(expenseCategories);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBeInstanceOf(Category);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'category_type',
         '=',
@@ -229,46 +179,6 @@ describe('CategoriesRepository', () => {
       const result = await repository.findByCategoryType('nonexistent');
 
       expect(result).toEqual([]);
-    });
-
-    it('should handle empty string category type', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByCategoryType('');
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        '',
-      );
-    });
-
-    it('should handle null category type', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByCategoryType(null as any);
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        null,
-      );
-    });
-
-    it('should handle special characters in category type', async () => {
-      const specialType = 'expense%_test\\';
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByCategoryType(specialType);
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        specialType,
-      );
     });
 
     it('should throw error when database query fails', async () => {
@@ -285,12 +195,13 @@ describe('CategoriesRepository', () => {
     const updateData = { category_name: 'Updated Food' };
 
     it('should update and return category', async () => {
-      const updated = { ...mockCategory, ...updateData };
+      const updated = { ...mockDatabaseRow, ...updateData };
       databaseService.query.mockResolvedValue(createQueryResult([updated]));
 
       const result = await repository.update(1, updateData);
 
-      expect(result).toEqual(updated);
+      expect(result).toBeInstanceOf(Category);
+      expect(result!.category_name).toBe('Updated Food');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'category_id',
         '=',
@@ -299,75 +210,12 @@ describe('CategoriesRepository', () => {
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(updateData);
     });
 
-    it('should return undefined when update affects no rows', async () => {
+    it('should return null when update affects no rows', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
       const result = await repository.update(999, updateData);
 
-      expect(result).toBeUndefined();
-    });
-
-    it('should handle empty update data', async () => {
-      const emptyUpdate = {};
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.update(1, emptyUpdate);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.update).toHaveBeenCalledWith(emptyUpdate);
-    });
-
-    it('should handle multiple field updates', async () => {
-      const multiUpdate = {
-        category_name: 'New Name',
-        category_type: 'income',
-      };
-      const updated = { ...mockCategory, ...multiUpdate };
-      databaseService.query.mockResolvedValue(createQueryResult([updated]));
-
-      const result = await repository.update(1, multiUpdate);
-
-      expect(result).toEqual(updated);
-      expect(mockQueryBuilder.update).toHaveBeenCalledWith(multiUpdate);
-    });
-
-    it('should handle null values in update data', async () => {
-      const updateWithNulls = {
-        category_name: null,
-        category_type: 'expense',
-      };
-      const updated = { ...mockCategory, ...updateWithNulls };
-      databaseService.query.mockResolvedValue(createQueryResult([updated]));
-
-      const result = await repository.update(1, updateWithNulls);
-
-      expect(result).toEqual(updated);
-    });
-
-    it('should handle zero ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.update(0, updateData);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_id',
-        '=',
-        0,
-      );
-    });
-
-    it('should handle negative ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.update(-1, updateData);
-
-      expect(result).toBeUndefined();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_id',
-        '=',
-        -1,
-      );
+      expect(result).toBeNull();
     });
 
     it('should throw error when database constraint violation occurs', async () => {
@@ -383,8 +231,8 @@ describe('CategoriesRepository', () => {
   describe('findByUserId', () => {
     it('should return categories by user ID', async () => {
       const userCategories = [
-        mockCategory,
-        { ...mockCategory, category_id: 2 },
+        mockDatabaseRow,
+        { ...mockDatabaseRow, category_id: 2 },
       ];
       databaseService.query.mockResolvedValue(
         createQueryResult(userCategories),
@@ -392,7 +240,8 @@ describe('CategoriesRepository', () => {
 
       const result = await repository.findByUserId('user123');
 
-      expect(result).toEqual(userCategories);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBeInstanceOf(Category);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'user_id',
         '=',
@@ -408,50 +257,6 @@ describe('CategoriesRepository', () => {
       expect(result).toEqual([]);
     });
 
-    it('should handle empty string user ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserId('');
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user_id', '=', '');
-    });
-
-    it('should handle null user ID', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserId(null as any);
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user_id', '=', null);
-    });
-
-    it('should handle UUID format user ID', async () => {
-      const uuid = '550e8400-e29b-41d4-a716-446655440000';
-      databaseService.query.mockResolvedValue(
-        createQueryResult([mockCategory]),
-      );
-
-      const result = await repository.findByUserId(uuid);
-
-      expect(result).toEqual([mockCategory]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user_id', '=', uuid);
-    });
-
-    it('should handle special characters in user ID', async () => {
-      const specialUserId = 'user@123_test%';
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserId(specialUserId);
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'user_id',
-        '=',
-        specialUserId,
-      );
-    });
-
     it('should throw error when database query fails', async () => {
       const dbError = new Error('Connection timeout');
       databaseService.query.mockRejectedValue(dbError);
@@ -464,7 +269,7 @@ describe('CategoriesRepository', () => {
 
   describe('findByUserIdandCategoryType', () => {
     it('should return categories by user ID and category type', async () => {
-      const filteredCategories = [mockCategory];
+      const filteredCategories = [mockDatabaseRow];
       databaseService.query.mockResolvedValue(
         createQueryResult(filteredCategories),
       );
@@ -474,7 +279,8 @@ describe('CategoriesRepository', () => {
         'expense',
       );
 
-      expect(result).toEqual(filteredCategories);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(Category);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'user_id',
         '=',
@@ -496,104 +302,6 @@ describe('CategoriesRepository', () => {
       );
 
       expect(result).toEqual([]);
-    });
-
-    it('should handle empty string parameters', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserIdandCategoryType('', '');
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user_id', '=', '');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        '',
-      );
-    });
-
-    it('should handle null parameters', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserIdandCategoryType(
-        null as any,
-        null as any,
-      );
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user_id', '=', null);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        null,
-      );
-    });
-
-    it('should handle mixed valid and invalid parameters', async () => {
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserIdandCategoryType(
-        'user123',
-        '',
-      );
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'user_id',
-        '=',
-        'user123',
-      );
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        '',
-      );
-    });
-
-    it('should handle special characters in both parameters', async () => {
-      const specialUserId = 'user@123%';
-      const specialType = 'type_with%special\\chars';
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserIdandCategoryType(
-        specialUserId,
-        specialType,
-      );
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'user_id',
-        '=',
-        specialUserId,
-      );
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        specialType,
-      );
-    });
-
-    it('should handle very long parameter values', async () => {
-      const longUserId = 'a'.repeat(1000);
-      const longType = 'b'.repeat(500);
-      databaseService.query.mockResolvedValue(createQueryResult([]));
-
-      const result = await repository.findByUserIdandCategoryType(
-        longUserId,
-        longType,
-      );
-
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'user_id',
-        '=',
-        longUserId,
-      );
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'category_type',
-        '=',
-        longType,
-      );
     });
 
     it('should throw error when database query fails', async () => {

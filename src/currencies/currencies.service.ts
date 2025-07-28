@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CurrencyRepository } from './currencies.repository';
 import { NotFoundError } from 'src/utils/custom_error';
+import { Currency } from './currency.entity';
 
 @Injectable()
 export class CurrenciesService {
   constructor(private readonly currencyRepository: CurrencyRepository) {}
 
-  async findAll() {
+  async findAll(): Promise<Currency[]> {
     return this.currencyRepository.findAll();
   }
 
-  async findById(id: number) {
+  async findById(id: number): Promise<Currency> {
     const currency = await this.currencyRepository.findById(id);
 
     if (!currency) {
@@ -20,7 +21,11 @@ export class CurrenciesService {
     return currency;
   }
 
-  async searchByName(name: string, page: number = 1, limit: number = 10) {
+  async searchByName(
+    name: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ data: Currency[]; page: number; limit: number; total: number }> {
     const offset = (page - 1) * limit;
     const { data, total } = await this.currencyRepository.searchByName(
       name,
@@ -40,11 +45,11 @@ export class CurrenciesService {
     };
   }
 
-  async create(currencyData: any) {
+  async create(currencyData: any): Promise<Currency> {
     return this.currencyRepository.create(currencyData);
   }
 
-  async update(id: number, currencyData: any) {
+  async update(id: number, currencyData: any): Promise<Currency | null> {
     const currency = await this.currencyRepository.findById(id);
 
     if (!currency) {

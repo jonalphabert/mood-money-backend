@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { CurrencyRepository } from '../currencies.repository';
 import { DatabaseService } from '../../database/database.service';
+import { Currency } from '../currency.entity';
 
 // Mock QueryBuilder
 const mockQueryBuilder = {
@@ -28,12 +29,16 @@ describe('CurrencyRepository', () => {
   let repository: CurrencyRepository;
   let databaseService: jest.Mocked<DatabaseService>;
 
-  const mockCurrency = {
+  const mockDatabaseRow = {
     currency_id: 1,
     currency_code: 'USD',
     currency_name: 'US Dollar',
     currency_symbol: '$',
+    is_active: true,
+    created_at: new Date(),
   };
+
+  const mockCurrencyEntity = Currency.fromDatabaseRow(mockDatabaseRow);
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -57,12 +62,14 @@ describe('CurrencyRepository', () => {
   describe('findAll', () => {
     it('should return all currencies', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCurrency]),
+        createQueryResult([mockDatabaseRow]),
       );
 
       const result = await repository.findAll();
 
-      expect(result).toEqual([mockCurrency]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(Currency);
+      expect(result[0].currency_id).toBe(1);
       expect(mockQueryBuilder.build).toHaveBeenCalled();
       expect(databaseService.query).toHaveBeenCalledWith('SELECT SQL', []);
     });
@@ -88,12 +95,13 @@ describe('CurrencyRepository', () => {
   describe('findById', () => {
     it('should return a currency by ID', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCurrency]),
+        createQueryResult([mockDatabaseRow]),
       );
 
       const result = await repository.findById(1);
 
-      expect(result).toEqual(mockCurrency);
+      expect(result).toBeInstanceOf(Currency);
+      expect(result!.currency_id).toBe(1);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
@@ -101,12 +109,12 @@ describe('CurrencyRepository', () => {
       );
     });
 
-    it('should return undefined if currency not found', async () => {
+    it('should return null if currency not found', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
       const result = await repository.findById(999);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
 
     it('should handle zero ID', async () => {
@@ -114,7 +122,7 @@ describe('CurrencyRepository', () => {
 
       const result = await repository.findById(0);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
@@ -127,7 +135,7 @@ describe('CurrencyRepository', () => {
 
       const result = await repository.findById(-1);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
@@ -146,12 +154,14 @@ describe('CurrencyRepository', () => {
   describe('searchByName', () => {
     it('should return matched currencies with pagination', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCurrency], 1),
+        createQueryResult([mockDatabaseRow], 1),
       );
 
       const result = await repository.searchByName('Dollar', 0, 10);
 
-      expect(result).toEqual({ data: [mockCurrency], total: 1 });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toBeInstanceOf(Currency);
+      expect(result.total).toBe(1);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_name',
         'ILIKE',
@@ -177,12 +187,14 @@ describe('CurrencyRepository', () => {
 
     it('should handle empty search term', async () => {
       databaseService.query.mockResolvedValue(
-        createQueryResult([mockCurrency]),
+        createQueryResult([mockDatabaseRow]),
       );
 
       const result = await repository.searchByName('', 0, 10);
 
-      expect(result).toEqual({ data: [mockCurrency], total: 1 });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toBeInstanceOf(Currency);
+      expect(result.total).toBe(1);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_name',
         'ILIKE',
@@ -247,30 +259,32 @@ describe('CurrencyRepository', () => {
     };
 
     it('should create and return a new currency', async () => {
-      const inserted = { ...input, currency_id: 2 };
+      const inserted = {
+        ...input,
+        currency_id: 2,
+        is_active: true,
+        created_at: new Date(),
+      };
       databaseService.query.mockResolvedValue(createQueryResult([inserted]));
 
       const result = await repository.create(input);
 
-      expect(result).toEqual(inserted);
+      expect(result).toBeInstanceOf(Currency);
+      expect(result.currency_id).toBe(2);
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith(input);
     });
 
-    it('should return undefined if insertion fails', async () => {
+    it('should throw error if insertion fails', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
-      const result = await repository.create(input);
-
-      expect(result).toBeUndefined();
+      await expect(repository.create(input)).rejects.toThrow();
     });
 
     it('should handle empty object input', async () => {
       const emptyInput = {};
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
-      const result = await repository.create(emptyInput);
-
-      expect(result).toBeUndefined();
+      await expect(repository.create(emptyInput)).rejects.toThrow();
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith(emptyInput);
     });
 
@@ -280,12 +294,17 @@ describe('CurrencyRepository', () => {
         currency_name: 'Test',
         currency_symbol: null,
       };
-      const inserted = { ...inputWithNulls, currency_id: 3 };
+      const inserted = {
+        ...inputWithNulls,
+        currency_id: 3,
+        is_active: true,
+        created_at: new Date(),
+      };
       databaseService.query.mockResolvedValue(createQueryResult([inserted]));
 
-      const result = await repository.create(inputWithNulls);
-
-      expect(result).toEqual(inserted);
+      await expect(repository.create(inputWithNulls)).rejects.toThrow(
+        'Currency code is required',
+      );
     });
 
     it('should throw error when database constraint violation occurs', async () => {
@@ -304,12 +323,13 @@ describe('CurrencyRepository', () => {
     const updateData = { currency_name: 'New Name' };
 
     it('should update and return the currency', async () => {
-      const updated = { ...mockCurrency, ...updateData };
+      const updated = { ...mockDatabaseRow, ...updateData };
       databaseService.query.mockResolvedValue(createQueryResult([updated]));
 
       const result = await repository.update(1, updateData);
 
-      expect(result).toEqual(updated);
+      expect(result).toBeInstanceOf(Currency);
+      expect(result!.currency_name).toBe('New Name');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
@@ -318,12 +338,12 @@ describe('CurrencyRepository', () => {
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(updateData);
     });
 
-    it('should return undefined if update affects no rows', async () => {
+    it('should return null if update affects no rows', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
       const result = await repository.update(999, updateData);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
 
     it('should handle empty update data', async () => {
@@ -332,7 +352,7 @@ describe('CurrencyRepository', () => {
 
       const result = await repository.update(1, emptyUpdate);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(emptyUpdate);
     });
 
@@ -342,26 +362,27 @@ describe('CurrencyRepository', () => {
         currency_symbol: '¥',
         currency_code: 'JPY',
       };
-      const updated = { ...mockCurrency, ...multiUpdate };
+      const updated = { ...mockDatabaseRow, ...multiUpdate };
       databaseService.query.mockResolvedValue(createQueryResult([updated]));
 
       const result = await repository.update(1, multiUpdate);
 
-      expect(result).toEqual(updated);
+      expect(result).toBeInstanceOf(Currency);
+      expect(result!.currency_name).toBe('Updated Name');
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(multiUpdate);
     });
 
-    it('should handle null values in update data', async () => {
-      const updateWithNulls = {
-        currency_name: null,
-        currency_symbol: 'Updated Symbol',
+    it('should handle partial update data', async () => {
+      const updateData = {
+        currency_name: 'Updated Name',
       };
-      const updated = { ...mockCurrency, ...updateWithNulls };
+      const updated = { ...mockDatabaseRow, ...updateData };
       databaseService.query.mockResolvedValue(createQueryResult([updated]));
 
-      const result = await repository.update(1, updateWithNulls);
+      const result = await repository.update(1, updateData);
 
-      expect(result).toEqual(updated);
+      expect(result).toBeInstanceOf(Currency);
+      expect(result!.currency_name).toBe('Updated Name');
     });
 
     it('should handle zero ID', async () => {
@@ -369,7 +390,7 @@ describe('CurrencyRepository', () => {
 
       const result = await repository.update(0, updateData);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
@@ -382,7 +403,7 @@ describe('CurrencyRepository', () => {
 
       const result = await repository.update(-1, updateData);
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'currency_id',
         '=',
