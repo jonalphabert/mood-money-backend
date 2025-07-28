@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { CurrenciesService } from './currencies.service';
-import { CurrencyRepository } from './currencies.repository';
+import { CurrenciesService } from '../currencies.service';
+import { CurrencyRepository } from '../currencies.repository';
 import { NotFoundError } from 'src/utils/custom_error';
 
 describe('CurrenciesService', () => {

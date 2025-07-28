@@ -1,6 +1,6 @@
 import { ArgumentsHost, BadRequestException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { GlobalExceptionFilter } from './global-exception.filter';
+import { GlobalExceptionFilter } from '../global-exception.filter';
 import { NotFoundError, CustomDatabaseError } from 'src/utils/custom_error';
 
 describe('GlobalExceptionFilter', () => {

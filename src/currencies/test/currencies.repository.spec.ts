@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { CurrencyRepository } from './currencies.repository';
-import { DatabaseService } from '../database/database.service';
+import { CurrencyRepository } from '../currencies.repository';
+import { DatabaseService } from '../../database/database.service';
 
 // Mock QueryBuilder
 const mockQueryBuilder = {
