@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CurrenciesController } from './currencies.controller';
-import { CurrenciesService } from './currencies.service';
+import { CurrenciesController } from '../currencies.controller';
+import { CurrenciesService } from '../currencies.service';
 
 describe('CurrenciesController', () => {
   let controller: CurrenciesController;
