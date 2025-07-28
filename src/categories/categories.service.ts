@@ -27,7 +27,10 @@ export class CategoriesService {
     return this.categoriesRepository.findByUserId(userId);
   }
 
-  async findByUserIdandCategoryType(userId: string, categoryType: string): Promise<Category[]> {
+  async findByUserIdandCategoryType(
+    userId: string,
+    categoryType: string,
+  ): Promise<Category[]> {
     return this.categoriesRepository.findByUserIdandCategoryType(
       userId,
       categoryType,
@@ -59,7 +62,9 @@ export class CategoriesService {
       throw new NotFoundError('Category not found');
     }
 
-    const deleted = await this.categoriesRepository.update(id, { is_active: false });
+    const deleted = await this.categoriesRepository.update(id, {
+      is_active: false,
+    });
     if (!deleted) {
       throw new NotFoundError('Category not found');
     }

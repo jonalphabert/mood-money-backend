@@ -36,7 +36,9 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows.length > 0 ? Category.fromDatabaseRow(result.rows[0]) : null;
+    return result.rows.length > 0
+      ? Category.fromDatabaseRow(result.rows[0])
+      : null;
   }
 
   async findByCategoryType(categoryType: string) {
@@ -62,7 +64,9 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows.length > 0 ? Category.fromDatabaseRow(result.rows[0]) : null;
+    return result.rows.length > 0
+      ? Category.fromDatabaseRow(result.rows[0])
+      : null;
   }
 
   async findByUserId(userId: string) {

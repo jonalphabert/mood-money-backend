@@ -151,9 +151,9 @@ describe('CategoriesController', () => {
 
   describe('delete', () => {
     it('should delete a category', async () => {
-      const deletedCategory = Category.fromDatabaseRow({ 
-        ...mockDatabaseRow, 
-        is_active: false 
+      const deletedCategory = Category.fromDatabaseRow({
+        ...mockDatabaseRow,
+        is_active: false,
       });
       mockCategoriesService.delete.mockResolvedValue(deletedCategory);
 
