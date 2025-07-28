@@ -2,17 +2,22 @@ import { Test } from '@nestjs/testing';
 import { CurrenciesService } from '../currencies.service';
 import { CurrencyRepository } from '../currencies.repository';
 import { NotFoundError } from 'src/utils/custom_error';
+import { Currency } from '../currency.entity';
 
 describe('CurrenciesService', () => {
   let service: CurrenciesService;
   let repository: jest.Mocked<CurrencyRepository>;
 
-  const mockCurrency = {
+  const mockDatabaseRow = {
     currency_id: 1,
     currency_code: 'USD',
     currency_name: 'US Dollar',
     currency_symbol: '$',
+    is_active: true,
+    created_at: new Date(),
   };
+
+  const mockCurrency = Currency.fromDatabaseRow(mockDatabaseRow);
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -43,10 +48,11 @@ describe('CurrenciesService', () => {
 
   describe('findAll', () => {
     it('should return all currencies', async () => {
-      const mockCurrencies = [
-        mockCurrency,
-        { ...mockCurrency, currency_id: 2 },
-      ];
+      const mockCurrency2 = Currency.fromDatabaseRow({
+        ...mockDatabaseRow,
+        currency_id: 2,
+      });
+      const mockCurrencies = [mockCurrency, mockCurrency2];
       repository.findAll.mockResolvedValue(mockCurrencies);
 
       const result = await service.findAll();
@@ -130,7 +136,12 @@ describe('CurrenciesService', () => {
     };
 
     it('should create and return a new currency', async () => {
-      const createdCurrency = { ...createData, currency_id: 2 };
+      const createdCurrency = Currency.fromDatabaseRow({
+        ...createData,
+        currency_id: 2,
+        is_active: true,
+        created_at: new Date(),
+      });
       repository.create.mockResolvedValue(createdCurrency);
 
       const result = await service.create(createData);
@@ -145,7 +156,10 @@ describe('CurrenciesService', () => {
 
     it('should update and return the currency', async () => {
       repository.findById.mockResolvedValue(mockCurrency);
-      const updatedCurrency = { ...mockCurrency, ...updateData };
+      const updatedCurrency = Currency.fromDatabaseRow({
+        ...mockDatabaseRow,
+        ...updateData,
+      });
       repository.update.mockResolvedValue(updatedCurrency);
 
       const result = await service.update(1, updateData);

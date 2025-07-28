@@ -3,18 +3,22 @@ import { CategoriesController } from '../categories.controller';
 import { CategoriesService } from '../categories.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
+import { Category } from '../category.entity';
 
 describe('CategoriesController', () => {
   let controller: CategoriesController;
   let service: CategoriesService;
 
-  const mockCategory = {
-    id: 1,
+  const mockDatabaseRow = {
+    category_id: 1,
     category_name: 'Food',
     category_type: 'expense',
     user_id: 'user-123',
+    parent_id: null,
     is_active: true,
   };
+
+  const mockCategory = Category.fromDatabaseRow(mockDatabaseRow);
 
   const mockCategoriesService = {
     findAll: jest.fn(),
@@ -132,10 +136,10 @@ describe('CategoriesController', () => {
       const updateDto: UpdateCategoryDto = {
         category_name: 'Updated Food',
       };
-      const updatedCategory = {
-        ...mockCategory,
+      const updatedCategory = Category.fromDatabaseRow({
+        ...mockDatabaseRow,
         category_name: 'Updated Food',
-      };
+      });
       mockCategoriesService.update.mockResolvedValue(updatedCategory);
 
       const result = await controller.update('1', updateDto);
@@ -147,7 +151,10 @@ describe('CategoriesController', () => {
 
   describe('delete', () => {
     it('should delete a category', async () => {
-      const deletedCategory = { ...mockCategory, is_active: false };
+      const deletedCategory = Category.fromDatabaseRow({ 
+        ...mockDatabaseRow, 
+        is_active: false 
+      });
       mockCategoriesService.delete.mockResolvedValue(deletedCategory);
 
       const result = await controller.delete('1');

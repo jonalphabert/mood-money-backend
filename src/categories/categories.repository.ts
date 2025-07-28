@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { QueryBuilder } from 'src/utils/query-builder';
+import { Category } from './category.entity';
 
 @Injectable()
 export class CategoriesRepository {
@@ -12,7 +13,7 @@ export class CategoriesRepository {
       sqlBuilder.sql,
       sqlBuilder.params,
     );
-    return result.rows;
+    return result.rows.map(Category.fromDatabaseRow);
   }
 
   async create(categoryData: any) {
@@ -21,7 +22,7 @@ export class CategoriesRepository {
       sqlBuilder.sql,
       sqlBuilder.params,
     );
-    return result.rows[0];
+    return Category.fromDatabaseRow(result.rows[0]);
   }
 
   async findById(id: number) {
@@ -35,7 +36,7 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows[0];
+    return result.rows.length > 0 ? Category.fromDatabaseRow(result.rows[0]) : null;
   }
 
   async findByCategoryType(categoryType: string) {
@@ -48,7 +49,7 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows;
+    return result.rows.map(Category.fromDatabaseRow);
   }
 
   async update(id: number, categoryData: any) {
@@ -61,7 +62,7 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows[0];
+    return result.rows.length > 0 ? Category.fromDatabaseRow(result.rows[0]) : null;
   }
 
   async findByUserId(userId: string) {
@@ -74,7 +75,7 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows;
+    return result.rows.map(Category.fromDatabaseRow);
   }
 
   async findByUserIdandCategoryType(userId: string, categoryType: string) {
@@ -89,6 +90,6 @@ export class CategoriesRepository {
       sqlBuilder.params,
     );
 
-    return result.rows;
+    return result.rows.map(Category.fromDatabaseRow);
   }
 }
