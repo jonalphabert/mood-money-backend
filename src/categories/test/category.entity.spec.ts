@@ -173,7 +173,9 @@ describe('Category Entity', () => {
         user_id: 'user-123',
       });
 
-      expect(() => category.validate()).toThrow('Category type must be "expense" or "income"');
+      expect(() => category.validate()).toThrow(
+        'Category type must be "expense" or "income"',
+      );
     });
 
     it('should pass validation for income type', () => {

@@ -4,6 +4,8 @@ import { CategoriesService } from '../categories.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { Category } from '../category.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { User } from '../../users/user.entity';
 
 describe('CategoriesController', () => {
   let controller: CategoriesController;
@@ -19,6 +21,20 @@ describe('CategoriesController', () => {
   };
 
   const mockCategory = Category.fromDatabaseRow(mockDatabaseRow);
+
+  const mockUser = new User({
+    user_id: 'user-123',
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'hashedpassword',
+    is_verified: true,
+    token_version: 1,
+    refresh_token: 'refresh-token',
+    verification_code: undefined,
+    created_at: new Date(),
+    last_login: new Date(),
+    display_currency_id: 1,
+  });
 
   const mockCategoriesService = {
     findAll: jest.fn(),
@@ -40,7 +56,10 @@ describe('CategoriesController', () => {
           useValue: mockCategoriesService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<CategoriesController>(CategoriesController);
     service = module.get<CategoriesService>(CategoriesService);
@@ -61,11 +80,11 @@ describe('CategoriesController', () => {
     });
   });
 
-  describe('findByUserId', () => {
-    it('should return categories by user ID', async () => {
+  describe('findMyCategories', () => {
+    it('should return current user categories', async () => {
       mockCategoriesService.findByUserId.mockResolvedValue([mockCategory]);
 
-      const result = await controller.findByUserId('user-123');
+      const result = await controller.findMyCategories(mockUser);
 
       expect(service.findByUserId).toHaveBeenCalledWith('user-123');
       expect(result).toEqual([mockCategory]);
@@ -85,14 +104,14 @@ describe('CategoriesController', () => {
     });
   });
 
-  describe('findByUserIdandCategoryType', () => {
-    it('should return categories by user ID and type', async () => {
+  describe('findMyCategoriesByType', () => {
+    it('should return current user categories by type', async () => {
       mockCategoriesService.findByUserIdandCategoryType.mockResolvedValue([
         mockCategory,
       ]);
 
-      const result = await controller.findByUserIdandCategoryType(
-        'user-123',
+      const result = await controller.findMyCategoriesByType(
+        mockUser,
         'expense',
       );
 
@@ -116,17 +135,19 @@ describe('CategoriesController', () => {
   });
 
   describe('create', () => {
-    it('should create a new category', async () => {
-      const createDto: CreateCategoryDto = {
+    it('should create a new category with current user ID', async () => {
+      const createDto = {
         category_name: 'Food',
         category_type: 'expense',
-        user_id: 'user-123',
-      };
+      } as CreateCategoryDto;
       mockCategoriesService.create.mockResolvedValue(mockCategory);
 
-      const result = await controller.create(createDto);
+      const result = await controller.create(createDto, mockUser);
 
-      expect(service.create).toHaveBeenCalledWith(createDto);
+      expect(service.create).toHaveBeenCalledWith({
+        ...createDto,
+        user_id: 'user-123',
+      });
       expect(result).toEqual(mockCategory);
     });
   });
@@ -151,9 +172,9 @@ describe('CategoriesController', () => {
 
   describe('delete', () => {
     it('should delete a category', async () => {
-      const deletedCategory = Category.fromDatabaseRow({ 
-        ...mockDatabaseRow, 
-        is_active: false 
+      const deletedCategory = Category.fromDatabaseRow({
+        ...mockDatabaseRow,
+        is_active: false,
       });
       mockCategoriesService.delete.mockResolvedValue(deletedCategory);
 

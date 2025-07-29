@@ -8,12 +8,20 @@ import {
   Delete,
   UsePipes,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrenciesService } from './currencies.service';
 import { ValidationPipe } from '@nestjs/common/pipes';
 import { CreateCurrencyDto } from './dto/create-currency.dto';
 import { UpdateCurrencyDto } from './dto/update-currency.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
 
+@ApiTags('currencies')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 @Controller('currencies')
 export class CurrenciesController {
   constructor(private readonly currenciesService: CurrenciesService) {}

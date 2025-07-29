@@ -97,7 +97,12 @@ describe('CategoriesRepository', () => {
     };
 
     it('should create and return new category', async () => {
-      const created = { ...categoryData, category_id: 2, parent_id: null, is_active: true };
+      const created = {
+        ...categoryData,
+        category_id: 2,
+        parent_id: null,
+        is_active: true,
+      };
       databaseService.query.mockResolvedValue(createQueryResult([created]));
 
       const result = await repository.create(categoryData);

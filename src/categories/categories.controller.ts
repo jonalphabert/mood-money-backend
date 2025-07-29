@@ -7,13 +7,21 @@ import {
   Put,
   Delete,
   UsePipes,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { ValidationPipe } from '@nestjs/common/pipes';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
 
+@ApiTags('categories')
+@ApiBearerAuth('access-token')
 @Controller('categories')
+@UseGuards(JwtAuthGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -22,9 +30,9 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
-  @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.categoriesService.findByUserId(userId);
+  @Get('my-categories')
+  findMyCategories(@CurrentUser() user: User) {
+    return this.categoriesService.findByUserId(user.user_id);
   }
 
   @Get('type/:categoryType')
@@ -32,13 +40,13 @@ export class CategoriesController {
     return this.categoriesService.findByCategoryType(categoryType);
   }
 
-  @Get('user/:userId/type/:categoryType')
-  findByUserIdandCategoryType(
-    @Param('userId') userId: string,
+  @Get('my-categories/type/:categoryType')
+  findMyCategoriesByType(
+    @CurrentUser() user: User,
     @Param('categoryType') categoryType: string,
   ) {
     return this.categoriesService.findByUserIdandCategoryType(
-      userId,
+      user.user_id,
       categoryType,
     );
   }
@@ -50,8 +58,11 @@ export class CategoriesController {
 
   @Post()
   @UsePipes(ValidationPipe)
-  create(@Body() categoryData: CreateCategoryDto) {
-    return this.categoriesService.create(categoryData);
+  create(@Body() categoryData: CreateCategoryDto, @CurrentUser() user: User) {
+    return this.categoriesService.create({
+      ...categoryData,
+      user_id: user.user_id,
+    });
   }
 
   @Put(':id')

@@ -41,7 +41,9 @@ describe('CategoriesService', () => {
     }).compile();
 
     service = module.get<CategoriesService>(CategoriesService);
-    repository = module.get<CategoriesRepository>(CategoriesRepository) as jest.Mocked<CategoriesRepository>;
+    repository = module.get<CategoriesRepository>(
+      CategoriesRepository,
+    ) as jest.Mocked<CategoriesRepository>;
   });
 
   afterEach(() => {
@@ -79,7 +81,9 @@ describe('CategoriesService', () => {
 
   describe('findByCategoryType', () => {
     it('should return categories by type', async () => {
-      mockCategoriesRepository.findByCategoryType.mockResolvedValue([mockCategory]);
+      mockCategoriesRepository.findByCategoryType.mockResolvedValue([
+        mockCategory,
+      ]);
 
       const result = await service.findByCategoryType('expense');
 
@@ -101,12 +105,20 @@ describe('CategoriesService', () => {
 
   describe('findByUserIdandCategoryType', () => {
     it('should return categories by user ID and type', async () => {
-      mockCategoriesRepository.findByUserIdandCategoryType.mockResolvedValue([mockCategory]);
+      mockCategoriesRepository.findByUserIdandCategoryType.mockResolvedValue([
+        mockCategory,
+      ]);
 
-      const result = await service.findByUserIdandCategoryType('user-123', 'expense');
+      const result = await service.findByUserIdandCategoryType(
+        'user-123',
+        'expense',
+      );
 
       expect(result).toEqual([mockCategory]);
-      expect(repository.findByUserIdandCategoryType).toHaveBeenCalledWith('user-123', 'expense');
+      expect(repository.findByUserIdandCategoryType).toHaveBeenCalledWith(
+        'user-123',
+        'expense',
+      );
     });
   });
 
@@ -130,7 +142,10 @@ describe('CategoriesService', () => {
   describe('update', () => {
     it('should update and return the category', async () => {
       const updateData = { category_name: 'Updated Food' };
-      const updatedCategory = Category.fromDatabaseRow({ ...mockDatabaseRow, ...updateData });
+      const updatedCategory = Category.fromDatabaseRow({
+        ...mockDatabaseRow,
+        ...updateData,
+      });
 
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(updatedCategory);
@@ -147,7 +162,9 @@ describe('CategoriesService', () => {
 
       mockCategoriesRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update(999, updateData)).rejects.toThrow(NotFoundError);
+      await expect(service.update(999, updateData)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(repository.update).not.toHaveBeenCalled();
     });
 
@@ -157,13 +174,18 @@ describe('CategoriesService', () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(null);
 
-      await expect(service.update(1, updateData)).rejects.toThrow(NotFoundError);
+      await expect(service.update(1, updateData)).rejects.toThrow(
+        NotFoundError,
+      );
     });
   });
 
   describe('delete', () => {
     it('should soft delete a category', async () => {
-      const deletedCategory = Category.fromDatabaseRow({ ...mockDatabaseRow, is_active: false });
+      const deletedCategory = Category.fromDatabaseRow({
+        ...mockDatabaseRow,
+        is_active: false,
+      });
 
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(deletedCategory);

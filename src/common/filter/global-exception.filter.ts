@@ -4,6 +4,7 @@ import {
   ArgumentsHost,
   HttpStatus,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { CustomDatabaseError, NotFoundError } from 'src/utils/custom_error';
@@ -31,6 +32,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       message = exception.getResponse()['message'] || exception.message;
       errorName = exception.name;
+    } else if (exception instanceof UnauthorizedException) {
+      status = HttpStatus.UNAUTHORIZED;
+      message = exception.message || message;
+      errorName = exception.name || errorName;
     } else if (exception instanceof Error) {
       message = exception.message || message;
       errorName = exception.name || errorName;

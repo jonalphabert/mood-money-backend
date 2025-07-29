@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CurrenciesController } from '../currencies.controller';
 import { CurrenciesService } from '../currencies.service';
 import { Currency } from '../currency.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 describe('CurrenciesController', () => {
   let controller: CurrenciesController;
@@ -35,7 +36,10 @@ describe('CurrenciesController', () => {
           useValue: mockCurrenciesService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<CurrenciesController>(CurrenciesController);
     service = module.get<CurrenciesService>(CurrenciesService);
