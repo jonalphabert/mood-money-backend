@@ -33,6 +33,7 @@ describe('UsersService', () => {
             update: jest.fn(),
             updateCurrency: jest.fn(),
             updateLastLogin: jest.fn(),
+            getProfile: jest.fn(),
           },
         },
       ],
@@ -114,6 +115,33 @@ describe('UsersService', () => {
         'verification-code',
       );
       expect(result).toBe(mockUser);
+    });
+  });
+
+  describe('getProfile', () => {
+    it('should return user profile with currency details', async () => {
+      const profileData = {
+        user_id: 'user-123',
+        username: 'testuser',
+        email: 'test@example.com',
+        currency_name: 'US Dollar',
+        currency_code: 'USD',
+        currency_symbol: '$',
+      };
+      repository.getProfile.mockResolvedValue(profileData);
+
+      const result = await service.getProfile('user-123');
+
+      expect(repository.getProfile).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual(profileData);
+    });
+
+    it('should return null if user not found', async () => {
+      repository.getProfile.mockResolvedValue(null);
+
+      const result = await service.getProfile('nonexistent');
+
+      expect(result).toBeNull();
     });
   });
 

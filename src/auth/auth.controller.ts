@@ -76,14 +76,10 @@ export class AuthController {
     );
     const cookieOptions = {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite:
-        this.configService.get('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      secure: false, // Set to false for development
+      sameSite: 'lax' as const,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
-
-    console.log('Setting cookie with options:', cookieOptions);
-    console.log('Refresh token being set:', refreshToken);
 
     res.cookie('refreshToken', refreshToken, cookieOptions);
     return { accessToken };
@@ -111,12 +107,10 @@ export class AuthController {
     @Res({ passthrough: true }) res,
     @Headers('x-device-id') deviceId: string,
   ) {
-    console.log('Cookies received in refresh:', req.cookies);
     const fingerprint = req['fingerprint'];
     const token = req.cookies?.refreshToken;
 
     if (!token) {
-      console.log('No refresh token found in cookies');
       throw new Error('Refresh token not found in cookies');
     }
 
@@ -151,13 +145,10 @@ export class AuthController {
     @Res({ passthrough: true }) res,
     @Body() logoutDto?: LogoutDto,
   ) {
-    console.log('Cookies received:', req.cookies);
-
     // Try to get token from body first, then from cookies
     const token = logoutDto?.refreshToken || req.cookies?.refreshToken;
 
     if (!token) {
-      console.log('No refresh token found in cookies or body');
       throw new Error('Refresh token not found in cookies or request body');
     }
 
@@ -166,9 +157,8 @@ export class AuthController {
     // Clear the refresh token cookie
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite:
-        this.configService.get('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      secure: false,
+      sameSite: 'lax' as const,
     });
 
     return { message: 'Logged out' };

@@ -18,11 +18,39 @@ async function bootstrap() {
         in: 'cookie',
         scheme: 'bearer',
       })
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'access-token',
+      )
       .build();
     const documentFactory = () => SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, documentFactory, {
       swaggerOptions: {
-        persistAuthorization: true,
+        persistAuthorization: true, // This is the key option
+        tryItOutEnabled: true,
+        requestInterceptor: (req) => {
+          if (!req.headers['Content-Type']) {
+            req.headers['Content-Type'] = 'application/json';
+          }
+          return req;
+        },
+        authAction: {
+          'access-token': {
+            schema: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+            },
+            value: '',
+          },
+        },
       },
     });
   }

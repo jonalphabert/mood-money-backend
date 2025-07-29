@@ -32,7 +32,7 @@ describe('AuthService', () => {
     password: 'hashedpassword',
     is_verified: true,
     token_version: 1,
-    refresh_token: ['existing-token'],
+    refresh_token: 'existing-token',
   });
 
   beforeEach(async () => {
@@ -181,7 +181,7 @@ describe('AuthService', () => {
     it('should refresh token successfully', async () => {
       const userWithToken = new User({
         ...mockUser,
-        refresh_token: ['refresh-token'],
+        refresh_token: 'refresh-token',
       });
       usersService.findByRefreshToken.mockResolvedValue(userWithToken);
       usersService.update.mockResolvedValue(mockUser);
@@ -213,7 +213,7 @@ describe('AuthService', () => {
     it('should logout user successfully', async () => {
       const userWithToken = new User({
         ...mockUser,
-        refresh_token: ['refresh-token'],
+        refresh_token: 'refresh-token',
       });
       usersService.findByRefreshToken.mockResolvedValue(userWithToken);
       usersService.update.mockResolvedValue(mockUser);
@@ -232,6 +232,21 @@ describe('AuthService', () => {
       await expect(
         service.logout('invalid-token', 'device-123'),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('logoutAllDevices', () => {
+    it('should logout all devices', async () => {
+      usersService.findById.mockResolvedValue(mockUser);
+      usersService.update.mockResolvedValue(mockUser);
+
+      await service.logoutAllDevices('user-123');
+
+      expect(usersService.findById).toHaveBeenCalledWith('user-123');
+      expect(usersService.update).toHaveBeenCalledWith('user-123', {
+        token_version: 2,
+        refresh_token: '',
+      });
     });
   });
 

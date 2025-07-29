@@ -10,6 +10,8 @@ const mockQueryBuilder = {
   build: jest.fn().mockReturnValue({ sql: 'SELECT SQL', params: [] }),
   offsetRecords: jest.fn().mockReturnThis(),
   limitRecords: jest.fn().mockReturnThis(),
+  join: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
 };
 
 jest.mock('src/utils/query-builder', () => ({
@@ -194,6 +196,33 @@ describe('UsersRepository', () => {
 
       expect(result).toBeInstanceOf(User);
       expect(result!.last_login).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('getProfile', () => {
+    it('should return user profile with currency details', async () => {
+      const profileData = {
+        ...mockDatabaseRow,
+        currency_name: 'US Dollar',
+        currency_code: 'USD',
+        currency_symbol: '$',
+      };
+      databaseService.query.mockResolvedValue(createQueryResult([profileData]));
+
+      const result = await usersRepository.getProfile('user-123');
+
+      expect(result).toEqual(profileData);
+      expect(result.currency_name).toBe('US Dollar');
+      expect(result.currency_code).toBe('USD');
+      expect(result.currency_symbol).toBe('$');
+    });
+
+    it('should return null if user not found', async () => {
+      databaseService.query.mockResolvedValue(createQueryResult([]));
+
+      const result = await usersRepository.getProfile('nonexistent');
+
+      expect(result).toBeNull();
     });
   });
 });

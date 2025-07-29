@@ -163,6 +163,35 @@ describe('AuthController', () => {
       );
       expect(result).toEqual({ message: 'Logged out' });
     });
+
+    it('should logout with refresh token from body', async () => {
+      const mockReq = { cookies: {} };
+      const mockRes = { clearCookie: jest.fn() };
+      const logoutDto = { refreshToken: 'body-refresh-token' };
+      authService.logout.mockResolvedValue();
+
+      const result = await controller.logout(
+        mockReq,
+        'device-123',
+        mockRes,
+        logoutDto,
+      );
+
+      expect(authService.logout).toHaveBeenCalledWith(
+        'body-refresh-token',
+        'device-123',
+      );
+      expect(result).toEqual({ message: 'Logged out' });
+    });
+
+    it('should throw error if no refresh token found', async () => {
+      const mockReq = { cookies: {} };
+      const mockRes = { clearCookie: jest.fn() };
+
+      await expect(
+        controller.logout(mockReq, 'device-123', mockRes),
+      ).rejects.toThrow('Refresh token not found in cookies or request body');
+    });
   });
 
   describe('verifyEmail', () => {
@@ -200,6 +229,15 @@ describe('AuthController', () => {
       await expect(controller.testEmail(testDto)).rejects.toThrow(
         'Test email endpoint not available in production',
       );
+    });
+
+    it('should handle email service errors', async () => {
+      const testDto = { email: 'test@example.com' };
+      emailService.sendVerificationEmail.mockRejectedValue(
+        new Error('SMTP Error'),
+      );
+
+      await expect(controller.testEmail(testDto)).rejects.toThrow('SMTP Error');
     });
   });
 });

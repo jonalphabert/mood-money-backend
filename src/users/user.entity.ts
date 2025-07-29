@@ -30,7 +30,7 @@ export class User {
   created_at?: Date;
 
   @ApiProperty({ description: 'Refresh tokens array', required: false })
-  refresh_token?: string[];
+  refresh_token?: string;
 
   @ApiProperty({
     description: 'Token version for invalidation',

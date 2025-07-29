@@ -28,7 +28,7 @@ export class DatabaseService implements OnModuleInit {
     // Test connection
     try {
       await this.pool.query('SELECT NOW()');
-      console.log('Database connected successfully');
+      // Database connected successfully
     } catch (error) {
       console.error('Database connection error', error);
       throw new CustomDatabaseError('Database connection error');

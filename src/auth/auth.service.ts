@@ -95,6 +95,7 @@ export class AuthService {
     fingerprint: string,
   ): Promise<{ accessToken: string }> {
     const user = await this.usersService.findByRefreshToken(refreshTokenValue);
+
     if (!user || !user.refresh_token?.includes(refreshTokenValue)) {
       throw new Error('Invalid refresh token');
     }

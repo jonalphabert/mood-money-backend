@@ -39,6 +39,30 @@ export class UsersRepository {
     return result.rows.length > 0 ? User.fromDatabaseRow(result.rows[0]) : null;
   }
 
+  async getProfile(id: string) {
+    const queryBuilder = new QueryBuilder('users')
+      .join(
+        'currencies',
+        'users.display_currency_id = c.currency_id',
+        'LEFT',
+        'c',
+      )
+      .select([
+        'users.*',
+        'c.currency_name',
+        'c.currency_code',
+        'c.currency_symbol',
+      ])
+      .where('user_id', '=', id)
+      .build();
+
+    const result = await this.databaseService.query(
+      queryBuilder.sql,
+      queryBuilder.params,
+    );
+    return result.rows.length > 0 ? result.rows[0] : null;
+  }
+
   async findByEmail(email: string) {
     const queryBuilder = new QueryBuilder('users')
       .where('email', '=', email)
@@ -51,8 +75,8 @@ export class UsersRepository {
   }
 
   async findByRefreshToken(refreshToken: string) {
-    const sql = `SELECT * FROM users WHERE refresh_token @> $1`;
-    const params = [JSON.stringify([refreshToken])];
+    const sql = `SELECT * FROM users WHERE refresh_token = $1`;
+    const params = [refreshToken];
 
     const result = await this.databaseService.query(sql, params);
     return result.rows.length > 0 ? User.fromDatabaseRow(result.rows[0]) : null;

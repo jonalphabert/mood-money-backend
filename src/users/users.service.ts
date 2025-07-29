@@ -27,6 +27,10 @@ export class UsersService {
     return this.usersRepository.findByRefreshToken(refreshToken);
   }
 
+  async getProfile(id: string): Promise<User | null> {
+    return this.usersRepository.getProfile(id);
+  }
+
   async findByVerificationCode(verificationCode: string): Promise<User | null> {
     return this.usersRepository.findByVerificationCode(verificationCode);
   }
@@ -59,7 +63,6 @@ export class UsersService {
 
   async update(id: string, userData: any): Promise<User> {
     const user = await this.usersRepository.findById(id);
-    console.log(userData);
     if (!user) {
       throw new NotFoundError('User not found');
     }
