@@ -43,7 +43,9 @@ describe('CategoriesController', () => {
     findByCategoryType: jest.fn(),
     findByUserIdandCategoryType: jest.fn(),
     create: jest.fn(),
+    createByUser: jest.fn(),
     update: jest.fn(),
+    updateByUser: jest.fn(),
     delete: jest.fn(),
   };
 
@@ -129,7 +131,7 @@ describe('CategoriesController', () => {
 
       const result = await controller.findOne('1');
 
-      expect(service.findById).toHaveBeenCalledWith(1);
+      expect(service.findById).toHaveBeenCalledWith('1');
       expect(result).toEqual(mockCategory);
     });
   });
@@ -165,8 +167,37 @@ describe('CategoriesController', () => {
 
       const result = await controller.update('1', updateDto);
 
-      expect(service.update).toHaveBeenCalledWith(1, updateDto);
+      expect(service.update).toHaveBeenCalledWith('1', updateDto);
       expect(result).toEqual(updatedCategory);
+    });
+  });
+
+  describe('createByUser', () => {
+    it('should create category by user', async () => {
+      const createDto = {
+        category_name: 'Food',
+        category_type: 'expense',
+      } as CreateCategoryDto;
+      mockCategoriesService.createByUser.mockResolvedValue(mockCategory);
+
+      const result = await controller.createByUser(createDto, mockUser);
+
+      expect(service.createByUser).toHaveBeenCalledWith(createDto, 'user-123');
+      expect(result).toEqual(mockCategory);
+    });
+  });
+
+  describe('updateByUser', () => {
+    it('should update category by user', async () => {
+      const updateDto: UpdateCategoryDto = {
+        category_name: 'Updated Food',
+      };
+      mockCategoriesService.updateByUser.mockResolvedValue(mockCategory);
+
+      const result = await controller.updateByUser('1', updateDto, mockUser);
+
+      expect(service.updateByUser).toHaveBeenCalledWith('1', updateDto, 'user-123');
+      expect(result).toEqual(mockCategory);
     });
   });
 
@@ -180,7 +211,7 @@ describe('CategoriesController', () => {
 
       const result = await controller.delete('1');
 
-      expect(service.delete).toHaveBeenCalledWith(1);
+      expect(service.delete).toHaveBeenCalledWith('1');
       expect(result).toEqual(deletedCategory);
     });
   });

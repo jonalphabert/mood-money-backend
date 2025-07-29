@@ -1,7 +1,7 @@
 export class QueryBuilder {
   private table: string;
   private fields: string[] = ['*'];
-  private conditions: { field: string; operator: string; value: any }[] = [];
+  private conditions: { field: string; operator: string; value: any; connector?: 'AND' | 'OR' }[] = [];
   private orderBy: { field: string; direction: 'ASC' | 'DESC' } | null = null;
   private limit: number | null = null;
   private offset: number | null = null;
@@ -33,7 +33,12 @@ export class QueryBuilder {
   }
 
   where(field: string, operator: string, value: any) {
-    this.conditions.push({ field, operator, value });
+    this.conditions.push({ field, operator, value, connector: 'AND' });
+    return this;
+  }
+
+  orWhere(field: string, operator: string, value: any) {
+    this.conditions.push({ field, operator, value, connector: 'OR' });
     return this;
   }
 
@@ -69,13 +74,22 @@ export class QueryBuilder {
       const whereClauses: string[] = [];
 
       for (const [index, condition] of this.conditions.entries()) {
-        whereClauses.push(
-          `${condition.field} ${condition.operator} $${index + 1}`,
-        );
-        params.push(condition.value);
+        let clause;
+        if (condition.operator === 'IS NULL' || condition.operator === 'IS NOT NULL') {
+          clause = `${condition.field} ${condition.operator}`;
+        } else {
+          clause = `${condition.field} ${condition.operator} $${params.length + 1}`;
+          params.push(condition.value);
+        }
+        
+        if (index === 0) {
+          whereClauses.push(clause);
+        } else {
+          whereClauses.push(`${condition.connector} ${clause}`);
+        }
       }
 
-      sql += whereClauses.join(' AND ');
+      sql += whereClauses.join(' ');
     }
 
     // ORDER BY clause
@@ -124,14 +138,23 @@ export class QueryBuilder {
       sql += ' WHERE ';
       const whereClauses: string[] = [];
 
-      for (const condition of this.conditions) {
-        whereClauses.push(
-          `${condition.field} ${condition.operator} $${paramCount++}`,
-        );
-        params.push(condition.value);
+      for (const [index, condition] of this.conditions.entries()) {
+        let clause;
+        if (condition.operator === 'IS NULL' || condition.operator === 'IS NOT NULL') {
+          clause = `${condition.field} ${condition.operator}`;
+        } else {
+          clause = `${condition.field} ${condition.operator} $${paramCount++}`;
+          params.push(condition.value);
+        }
+        
+        if (index === 0) {
+          whereClauses.push(clause);
+        } else {
+          whereClauses.push(`${condition.connector} ${clause}`);
+        }
       }
 
-      sql += whereClauses.join(' AND ');
+      sql += whereClauses.join(' ');
     } else {
       throw new Error('UPDATE without WHERE clause is not allowed for safety.');
     }

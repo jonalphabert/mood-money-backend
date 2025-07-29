@@ -25,7 +25,7 @@ export class CategoriesRepository {
     return Category.fromDatabaseRow(result.rows[0]);
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     const sqlBuilder = new QueryBuilder('categories')
       .where('category_id', '=', id)
       .where('is_active', '=', true)
@@ -54,7 +54,7 @@ export class CategoriesRepository {
     return result.rows.map(Category.fromDatabaseRow);
   }
 
-  async update(id: number, categoryData: any) {
+  async update(id: string, categoryData: any) {
     const sqlBuilder = new QueryBuilder('categories')
       .where('category_id', '=', id)
       .update(categoryData);
@@ -72,6 +72,7 @@ export class CategoriesRepository {
   async findByUserId(userId: string) {
     const sqlBuilder = new QueryBuilder('categories')
       .where('user_id', '=', userId)
+      .orWhere('user_id', 'IS NULL', null)
       .build();
 
     const result = await this.databaseService.query(

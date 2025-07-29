@@ -6,6 +6,7 @@ import { Category } from '../category.entity';
 // Mock QueryBuilder
 const mockQueryBuilder = {
   where: jest.fn().mockReturnThis(),
+  orWhere: jest.fn().mockReturnThis(),
   update: jest.fn().mockReturnThis(),
   insert: jest.fn().mockReturnValue({ sql: 'INSERT SQL', params: [] }),
   build: jest.fn().mockReturnValue({ sql: 'SELECT SQL', params: [] }),
@@ -130,21 +131,21 @@ describe('CategoriesRepository', () => {
         createQueryResult([mockDatabaseRow]),
       );
 
-      const result = await repository.findById(1);
+      const result = await repository.findById('1');
 
       expect(result).toBeInstanceOf(Category);
       expect(result!.category_id).toBe(1);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'category_id',
         '=',
-        1,
+        '1',
       );
     });
 
     it('should return null when category not found', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
-      const result = await repository.findById(999);
+      const result = await repository.findById('999');
 
       expect(result).toBeNull();
     });
@@ -153,7 +154,7 @@ describe('CategoriesRepository', () => {
       const dbError = new Error('Database timeout');
       databaseService.query.mockRejectedValue(dbError);
 
-      await expect(repository.findById(1)).rejects.toThrow('Database timeout');
+      await expect(repository.findById('1')).rejects.toThrow('Database timeout');
     });
   });
 
@@ -203,14 +204,14 @@ describe('CategoriesRepository', () => {
       const updated = { ...mockDatabaseRow, ...updateData };
       databaseService.query.mockResolvedValue(createQueryResult([updated]));
 
-      const result = await repository.update(1, updateData);
+      const result = await repository.update('1', updateData);
 
       expect(result).toBeInstanceOf(Category);
       expect(result!.category_name).toBe('Updated Food');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'category_id',
         '=',
-        1,
+        '1',
       );
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(updateData);
     });
@@ -218,7 +219,7 @@ describe('CategoriesRepository', () => {
     it('should return null when update affects no rows', async () => {
       databaseService.query.mockResolvedValue(createQueryResult([]));
 
-      const result = await repository.update(999, updateData);
+      const result = await repository.update('999', updateData);
 
       expect(result).toBeNull();
     });
@@ -227,7 +228,7 @@ describe('CategoriesRepository', () => {
       const dbError = new Error('foreign key constraint violation');
       databaseService.query.mockRejectedValue(dbError);
 
-      await expect(repository.update(1, updateData)).rejects.toThrow(
+      await expect(repository.update('1', updateData)).rejects.toThrow(
         'foreign key constraint violation',
       );
     });

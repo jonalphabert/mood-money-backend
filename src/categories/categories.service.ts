@@ -11,7 +11,7 @@ export class CategoriesService {
     return this.categoriesRepository.findAll();
   }
 
-  async findById(id: number): Promise<Category> {
+  async findById(id: string): Promise<Category> {
     const category = await this.categoriesRepository.findById(id);
     if (!category) {
       throw new NotFoundError('Category not found');
@@ -41,7 +41,14 @@ export class CategoriesService {
     return this.categoriesRepository.create(categoryData);
   }
 
-  async update(id: number, categoryData: any): Promise<Category> {
+  async createByUser(categoryData: any, userId: string): Promise<Category> {
+    return this.categoriesRepository.create({
+      ...categoryData,
+      user_id: userId,
+    });
+  }
+
+  async update(id: string, categoryData: any): Promise<Category> {
     const category = await this.categoriesRepository.findById(id);
 
     if (!category) {
@@ -55,7 +62,35 @@ export class CategoriesService {
     return updated;
   }
 
-  async delete(id: number): Promise<Category> {
+  async updateByUser(
+    id: string,
+    categoryData: any,
+    userId: string,
+  ): Promise<Category> {
+    const category = await this.categoriesRepository.findById(id);
+
+    if (!category) {
+      throw new NotFoundError('Category not found');
+    }
+
+    if (category.user_id !== userId) {
+      throw new NotFoundError('Category not found');
+    }
+
+    if (category.is_active === false) {
+      throw new NotFoundError('Category not found');
+    }
+
+    categoryData.user_id = userId;
+
+    const updated = await this.categoriesRepository.update(id, categoryData);
+    if (!updated) {
+      throw new NotFoundError('Category not found');
+    }
+    return updated;
+  }
+
+  async delete(id: string): Promise<Category> {
     const category = await this.categoriesRepository.findById(id);
 
     if (!category) {

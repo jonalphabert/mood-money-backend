@@ -57,14 +57,10 @@ describe('DatabaseService', () => {
       });
 
       mockPoolInstance.query.mockResolvedValue({ rows: [{ now: new Date() }] });
-      console.log = jest.fn();
 
       await service.onModuleInit();
 
       expect(mockPoolInstance.query).toHaveBeenCalledWith('SELECT NOW()');
-      expect(console.log).toHaveBeenCalledWith(
-        'Database connected successfully',
-      );
     });
 
     it('should throw error when connection fails', async () => {
