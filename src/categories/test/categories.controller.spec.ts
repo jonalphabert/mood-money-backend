@@ -196,7 +196,11 @@ describe('CategoriesController', () => {
 
       const result = await controller.updateByUser('1', updateDto, mockUser);
 
-      expect(service.updateByUser).toHaveBeenCalledWith('1', updateDto, 'user-123');
+      expect(service.updateByUser).toHaveBeenCalledWith(
+        '1',
+        updateDto,
+        'user-123',
+      );
       expect(result).toEqual(mockCategory);
     });
   });

@@ -1,7 +1,12 @@
 export class QueryBuilder {
   private table: string;
   private fields: string[] = ['*'];
-  private conditions: { field: string; operator: string; value: any; connector?: 'AND' | 'OR' }[] = [];
+  private conditions: {
+    field: string;
+    operator: string;
+    value: any;
+    connector?: 'AND' | 'OR';
+  }[] = [];
   private orderBy: { field: string; direction: 'ASC' | 'DESC' } | null = null;
   private limit: number | null = null;
   private offset: number | null = null;
@@ -75,13 +80,16 @@ export class QueryBuilder {
 
       for (const [index, condition] of this.conditions.entries()) {
         let clause;
-        if (condition.operator === 'IS NULL' || condition.operator === 'IS NOT NULL') {
+        if (
+          condition.operator === 'IS NULL' ||
+          condition.operator === 'IS NOT NULL'
+        ) {
           clause = `${condition.field} ${condition.operator}`;
         } else {
           clause = `${condition.field} ${condition.operator} $${params.length + 1}`;
           params.push(condition.value);
         }
-        
+
         if (index === 0) {
           whereClauses.push(clause);
         } else {
@@ -140,13 +148,16 @@ export class QueryBuilder {
 
       for (const [index, condition] of this.conditions.entries()) {
         let clause;
-        if (condition.operator === 'IS NULL' || condition.operator === 'IS NOT NULL') {
+        if (
+          condition.operator === 'IS NULL' ||
+          condition.operator === 'IS NOT NULL'
+        ) {
           clause = `${condition.field} ${condition.operator}`;
         } else {
           clause = `${condition.field} ${condition.operator} $${paramCount++}`;
           params.push(condition.value);
         }
-        
+
         if (index === 0) {
           whereClauses.push(clause);
         } else {

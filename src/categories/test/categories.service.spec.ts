@@ -210,21 +210,27 @@ describe('CategoriesService', () => {
     it('should throw NotFoundError if category not found', async () => {
       mockCategoriesRepository.findById.mockResolvedValue(null);
 
-      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(NotFoundError);
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
     it('should throw NotFoundError if user does not own category', async () => {
       const otherUserCategory = { ...mockCategory, user_id: 'other-user' };
       mockCategoriesRepository.findById.mockResolvedValue(otherUserCategory);
 
-      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(NotFoundError);
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
     it('should throw NotFoundError if category is inactive', async () => {
       const inactiveCategory = { ...mockCategory, is_active: false };
       mockCategoriesRepository.findById.mockResolvedValue(inactiveCategory);
 
-      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(NotFoundError);
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
+        NotFoundError,
+      );
     });
   });
 

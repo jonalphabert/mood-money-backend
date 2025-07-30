@@ -37,8 +37,6 @@ describe('CategoriesRepository', () => {
     is_active: true,
   };
 
-  const mockCategory = Category.fromDatabaseRow(mockDatabaseRow);
-
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -53,9 +51,7 @@ describe('CategoriesRepository', () => {
     }).compile();
 
     repository = moduleRef.get(CategoriesRepository);
-    databaseService = moduleRef.get(
-      DatabaseService,
-    ) as jest.Mocked<DatabaseService>;
+    databaseService = moduleRef.get(DatabaseService);
   });
 
   describe('findAll', () => {
@@ -154,7 +150,9 @@ describe('CategoriesRepository', () => {
       const dbError = new Error('Database timeout');
       databaseService.query.mockRejectedValue(dbError);
 
-      await expect(repository.findById('1')).rejects.toThrow('Database timeout');
+      await expect(repository.findById('1')).rejects.toThrow(
+        'Database timeout',
+      );
     });
   });
 

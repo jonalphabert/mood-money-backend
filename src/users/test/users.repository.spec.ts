@@ -56,9 +56,7 @@ describe('UsersRepository', () => {
     }).compile();
 
     usersRepository = moduleRef.get<UsersRepository>(UsersRepository);
-    databaseService = moduleRef.get(
-      DatabaseService,
-    ) as jest.Mocked<DatabaseService>;
+    databaseService = moduleRef.get(DatabaseService);
   });
 
   describe('create', () => {

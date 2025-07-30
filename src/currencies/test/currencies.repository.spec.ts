@@ -38,8 +38,6 @@ describe('CurrencyRepository', () => {
     created_at: new Date(),
   };
 
-  const mockCurrencyEntity = Currency.fromDatabaseRow(mockDatabaseRow);
-
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -54,9 +52,7 @@ describe('CurrencyRepository', () => {
     }).compile();
 
     repository = moduleRef.get(CurrencyRepository);
-    databaseService = moduleRef.get(
-      DatabaseService,
-    ) as jest.Mocked<DatabaseService>;
+    databaseService = moduleRef.get(DatabaseService);
   });
 
   describe('findAll', () => {

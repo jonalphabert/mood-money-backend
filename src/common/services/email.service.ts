@@ -16,7 +16,7 @@ export class EmailService {
     ) {
       // For testing - will be set up with Ethereal
       this.transporter = null as any;
-      this.setupEtherealTransporter();
+      void this.setupEtherealTransporter();
     } else {
       this.transporter = nodemailer.createTransport({
         host: this.configService.get('SMTP_HOST', 'localhost'),

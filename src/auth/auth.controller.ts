@@ -141,7 +141,6 @@ export class AuthController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async logout(
     @Req() req,
-    @Headers('x-device-id') deviceId: string,
     @Res({ passthrough: true }) res,
     @Body() logoutDto?: LogoutDto,
   ) {
@@ -152,7 +151,7 @@ export class AuthController {
       throw new Error('Refresh token not found in cookies or request body');
     }
 
-    await this.authService.logout(token, deviceId);
+    await this.authService.logout(token);
 
     // Clear the refresh token cookie
     res.clearCookie('refreshToken', {

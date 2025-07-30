@@ -56,10 +56,10 @@ describe('AuthController', () => {
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get(AuthService) as jest.Mocked<AuthService>;
-    usersService = module.get(UsersService) as jest.Mocked<UsersService>;
-    emailService = module.get(EmailService) as jest.Mocked<EmailService>;
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    authService = module.get(AuthService);
+    usersService = module.get(UsersService);
+    emailService = module.get(EmailService);
+    configService = module.get(ConfigService);
   });
 
   describe('register', () => {
@@ -151,12 +151,9 @@ describe('AuthController', () => {
       const mockRes = { clearCookie: jest.fn() };
       authService.logout.mockResolvedValue();
 
-      const result = await controller.logout(mockReq, 'device-123', mockRes);
+      const result = await controller.logout(mockReq, mockRes);
 
-      expect(authService.logout).toHaveBeenCalledWith(
-        'refresh-token',
-        'device-123',
-      );
+      expect(authService.logout).toHaveBeenCalledWith('refresh-token');
       expect(mockRes.clearCookie).toHaveBeenCalledWith(
         'refreshToken',
         expect.any(Object),
@@ -170,17 +167,9 @@ describe('AuthController', () => {
       const logoutDto = { refreshToken: 'body-refresh-token' };
       authService.logout.mockResolvedValue();
 
-      const result = await controller.logout(
-        mockReq,
-        'device-123',
-        mockRes,
-        logoutDto,
-      );
+      const result = await controller.logout(mockReq, mockRes, logoutDto);
 
-      expect(authService.logout).toHaveBeenCalledWith(
-        'body-refresh-token',
-        'device-123',
-      );
+      expect(authService.logout).toHaveBeenCalledWith('body-refresh-token');
       expect(result).toEqual({ message: 'Logged out' });
     });
 
@@ -188,9 +177,9 @@ describe('AuthController', () => {
       const mockReq = { cookies: {} };
       const mockRes = { clearCookie: jest.fn() };
 
-      await expect(
-        controller.logout(mockReq, 'device-123', mockRes),
-      ).rejects.toThrow('Refresh token not found in cookies or request body');
+      await expect(controller.logout(mockReq, mockRes)).rejects.toThrow(
+        'Refresh token not found in cookies or request body',
+      );
     });
   });
 

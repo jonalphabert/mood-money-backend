@@ -153,9 +153,14 @@ describe('QueryBuilder', () => {
   describe('orWhere', () => {
     it('should add OR condition', () => {
       const qb = new QueryBuilder('users');
-      const result = qb.where('status', '=', 'active').orWhere('status', '=', 'pending').build();
+      const result = qb
+        .where('status', '=', 'active')
+        .orWhere('status', '=', 'pending')
+        .build();
 
-      expect(result.sql).toBe('SELECT * FROM users WHERE status = $1 OR status = $2');
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE status = $1 OR status = $2',
+      );
       expect(result.params).toEqual(['active', 'pending']);
     });
 
@@ -167,7 +172,9 @@ describe('QueryBuilder', () => {
         .orWhere('is_premium', '=', true)
         .build();
 
-      expect(result.sql).toBe('SELECT * FROM users WHERE age > $1 AND country = $2 OR is_premium = $3');
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE age > $1 AND country = $2 OR is_premium = $3',
+      );
       expect(result.params).toEqual([18, 'US', true]);
     });
 
@@ -178,7 +185,9 @@ describe('QueryBuilder', () => {
         .orWhere('deleted_at', 'IS NULL', null)
         .build();
 
-      expect(result.sql).toBe('SELECT * FROM users WHERE status = $1 OR deleted_at IS NULL');
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE status = $1 OR deleted_at IS NULL',
+      );
       expect(result.params).toEqual(['active']);
     });
   });

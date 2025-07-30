@@ -8,7 +8,7 @@ jest.mock('pg');
 
 describe('DatabaseService', () => {
   let service: DatabaseService;
-  let configService: ConfigService;
+
   let mockPoolInstance: any;
 
   const mockConfigService = {
@@ -36,7 +36,6 @@ describe('DatabaseService', () => {
     }).compile();
 
     service = module.get<DatabaseService>(DatabaseService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   afterEach(() => {

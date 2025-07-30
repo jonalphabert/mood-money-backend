@@ -23,7 +23,6 @@ describe('AuthService', () => {
   let usersService: jest.Mocked<UsersService>;
   let emailService: jest.Mocked<EmailService>;
   let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockUser = new User({
     user_id: 'user-123',
@@ -71,10 +70,9 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get(UsersService) as jest.Mocked<UsersService>;
-    emailService = module.get(EmailService) as jest.Mocked<EmailService>;
-    jwtService = module.get(JwtService) as jest.Mocked<JwtService>;
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    usersService = module.get(UsersService);
+    emailService = module.get(EmailService);
+    jwtService = module.get(JwtService);
   });
 
   describe('register', () => {
@@ -218,7 +216,7 @@ describe('AuthService', () => {
       usersService.findByRefreshToken.mockResolvedValue(userWithToken);
       usersService.update.mockResolvedValue(mockUser);
 
-      await service.logout('refresh-token', 'device-123');
+      await service.logout('refresh-token');
 
       expect(usersService.findByRefreshToken).toHaveBeenCalledWith(
         'refresh-token',
@@ -229,9 +227,7 @@ describe('AuthService', () => {
     it('should handle invalid refresh token gracefully', async () => {
       usersService.findByRefreshToken.mockResolvedValue(null);
 
-      await expect(
-        service.logout('invalid-token', 'device-123'),
-      ).resolves.toBeUndefined();
+      await expect(service.logout('invalid-token')).resolves.toBeUndefined();
     });
   });
 
