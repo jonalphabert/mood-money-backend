@@ -65,17 +65,17 @@ describe('CategoriesService', () => {
     it('should return a category when found', async () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
 
-      const result = await service.findById(1);
+      const result = await service.findById('1');
 
       expect(result).toEqual(mockCategory);
-      expect(repository.findById).toHaveBeenCalledWith(1);
+      expect(repository.findById).toHaveBeenCalledWith('1');
     });
 
     it('should throw NotFoundError when category not found', async () => {
       mockCategoriesRepository.findById.mockResolvedValue(null);
 
-      await expect(service.findById(999)).rejects.toThrow(NotFoundError);
-      expect(repository.findById).toHaveBeenCalledWith(999);
+      await expect(service.findById('999')).rejects.toThrow(NotFoundError);
+      expect(repository.findById).toHaveBeenCalledWith('999');
     });
   });
 
@@ -139,6 +139,19 @@ describe('CategoriesService', () => {
     });
   });
 
+  describe('createByUser', () => {
+    it('should create category by user', async () => {
+      const categoryData = { category_name: 'Food', category_type: 'expense' };
+      const expectedData = { ...categoryData, user_id: 'user-123' };
+      mockCategoriesRepository.create.mockResolvedValue(mockCategory);
+
+      const result = await service.createByUser(categoryData, 'user-123');
+
+      expect(repository.create).toHaveBeenCalledWith(expectedData);
+      expect(result).toBe(mockCategory);
+    });
+  });
+
   describe('update', () => {
     it('should update and return the category', async () => {
       const updateData = { category_name: 'Updated Food' };
@@ -150,11 +163,11 @@ describe('CategoriesService', () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(updatedCategory);
 
-      const result = await service.update(1, updateData);
+      const result = await service.update('1', updateData);
 
       expect(result).toEqual(updatedCategory);
-      expect(repository.findById).toHaveBeenCalledWith(1);
-      expect(repository.update).toHaveBeenCalledWith(1, updateData);
+      expect(repository.findById).toHaveBeenCalledWith('1');
+      expect(repository.update).toHaveBeenCalledWith('1', updateData);
     });
 
     it('should throw NotFoundError when updating non-existent category', async () => {
@@ -162,7 +175,7 @@ describe('CategoriesService', () => {
 
       mockCategoriesRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update(999, updateData)).rejects.toThrow(
+      await expect(service.update('999', updateData)).rejects.toThrow(
         NotFoundError,
       );
       expect(repository.update).not.toHaveBeenCalled();
@@ -174,7 +187,48 @@ describe('CategoriesService', () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(null);
 
-      await expect(service.update(1, updateData)).rejects.toThrow(
+      await expect(service.update('1', updateData)).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+  });
+
+  describe('updateByUser', () => {
+    it('should update category by user', async () => {
+      const updateData = { category_name: 'Updated Food' };
+      const expectedData = { ...updateData, user_id: 'user-123' };
+      mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
+      mockCategoriesRepository.update.mockResolvedValue(mockCategory);
+
+      const result = await service.updateByUser('1', updateData, 'user-123');
+
+      expect(repository.findById).toHaveBeenCalledWith('1');
+      expect(repository.update).toHaveBeenCalledWith('1', expectedData);
+      expect(result).toBe(mockCategory);
+    });
+
+    it('should throw NotFoundError if category not found', async () => {
+      mockCategoriesRepository.findById.mockResolvedValue(null);
+
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('should throw NotFoundError if user does not own category', async () => {
+      const otherUserCategory = { ...mockCategory, user_id: 'other-user' };
+      mockCategoriesRepository.findById.mockResolvedValue(otherUserCategory);
+
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('should throw NotFoundError if category is inactive', async () => {
+      const inactiveCategory = { ...mockCategory, is_active: false };
+      mockCategoriesRepository.findById.mockResolvedValue(inactiveCategory);
+
+      await expect(service.updateByUser('1', {}, 'user-123')).rejects.toThrow(
         NotFoundError,
       );
     });
@@ -190,17 +244,17 @@ describe('CategoriesService', () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(deletedCategory);
 
-      const result = await service.delete(1);
+      const result = await service.delete('1');
 
       expect(result).toEqual(deletedCategory);
-      expect(repository.findById).toHaveBeenCalledWith(1);
-      expect(repository.update).toHaveBeenCalledWith(1, { is_active: false });
+      expect(repository.findById).toHaveBeenCalledWith('1');
+      expect(repository.update).toHaveBeenCalledWith('1', { is_active: false });
     });
 
     it('should throw NotFoundError when deleting non-existent category', async () => {
       mockCategoriesRepository.findById.mockResolvedValue(null);
 
-      await expect(service.delete(999)).rejects.toThrow(NotFoundError);
+      await expect(service.delete('999')).rejects.toThrow(NotFoundError);
       expect(repository.update).not.toHaveBeenCalled();
     });
 
@@ -208,7 +262,7 @@ describe('CategoriesService', () => {
       mockCategoriesRepository.findById.mockResolvedValue(mockCategory);
       mockCategoriesRepository.update.mockResolvedValue(null);
 
-      await expect(service.delete(1)).rejects.toThrow(NotFoundError);
+      await expect(service.delete('1')).rejects.toThrow(NotFoundError);
     });
   });
 });

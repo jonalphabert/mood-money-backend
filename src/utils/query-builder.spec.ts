@@ -132,6 +132,64 @@ describe('QueryBuilder', () => {
       expect(result.sql).toBe('SELECT * FROM users WHERE id IN $1');
       expect(result.params).toEqual([[1, 2, 3]]);
     });
+
+    it('should handle IS NULL operator', () => {
+      const qb = new QueryBuilder('users');
+      const result = qb.where('deleted_at', 'IS NULL', null).build();
+
+      expect(result.sql).toBe('SELECT * FROM users WHERE deleted_at IS NULL');
+      expect(result.params).toEqual([]);
+    });
+
+    it('should handle IS NOT NULL operator', () => {
+      const qb = new QueryBuilder('users');
+      const result = qb.where('email', 'IS NOT NULL', null).build();
+
+      expect(result.sql).toBe('SELECT * FROM users WHERE email IS NOT NULL');
+      expect(result.params).toEqual([]);
+    });
+  });
+
+  describe('orWhere', () => {
+    it('should add OR condition', () => {
+      const qb = new QueryBuilder('users');
+      const result = qb
+        .where('status', '=', 'active')
+        .orWhere('status', '=', 'pending')
+        .build();
+
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE status = $1 OR status = $2',
+      );
+      expect(result.params).toEqual(['active', 'pending']);
+    });
+
+    it('should handle mixed AND/OR conditions', () => {
+      const qb = new QueryBuilder('users');
+      const result = qb
+        .where('age', '>', 18)
+        .where('country', '=', 'US')
+        .orWhere('is_premium', '=', true)
+        .build();
+
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE age > $1 AND country = $2 OR is_premium = $3',
+      );
+      expect(result.params).toEqual([18, 'US', true]);
+    });
+
+    it('should handle OR with IS NULL', () => {
+      const qb = new QueryBuilder('users');
+      const result = qb
+        .where('status', '=', 'active')
+        .orWhere('deleted_at', 'IS NULL', null)
+        .build();
+
+      expect(result.sql).toBe(
+        'SELECT * FROM users WHERE status = $1 OR deleted_at IS NULL',
+      );
+      expect(result.params).toEqual(['active']);
+    });
   });
 
   describe('join', () => {

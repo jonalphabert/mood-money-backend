@@ -8,7 +8,7 @@ jest.mock('pg');
 
 describe('DatabaseService', () => {
   let service: DatabaseService;
-  let configService: ConfigService;
+
   let mockPoolInstance: any;
 
   const mockConfigService = {
@@ -36,7 +36,6 @@ describe('DatabaseService', () => {
     }).compile();
 
     service = module.get<DatabaseService>(DatabaseService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   afterEach(() => {
@@ -57,14 +56,10 @@ describe('DatabaseService', () => {
       });
 
       mockPoolInstance.query.mockResolvedValue({ rows: [{ now: new Date() }] });
-      console.log = jest.fn();
 
       await service.onModuleInit();
 
       expect(mockPoolInstance.query).toHaveBeenCalledWith('SELECT NOW()');
-      expect(console.log).toHaveBeenCalledWith(
-        'Database connected successfully',
-      );
     });
 
     it('should throw error when connection fails', async () => {

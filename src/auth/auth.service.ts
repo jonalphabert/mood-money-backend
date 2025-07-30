@@ -51,8 +51,10 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-    deviceId: string,
-    fingerprint: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _deviceId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _fingerprint: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
@@ -91,8 +93,10 @@ export class AuthService {
 
   async refresh(
     refreshTokenValue: string,
-    deviceId: string,
-    fingerprint: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _deviceId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _fingerprint: string,
   ): Promise<{ accessToken: string }> {
     const user = await this.usersService.findByRefreshToken(refreshTokenValue);
 
@@ -122,7 +126,7 @@ export class AuthService {
     return { accessToken };
   }
 
-  async logout(refreshTokenValue: string, deviceId: string): Promise<void> {
+  async logout(refreshTokenValue: string): Promise<void> {
     const user = await this.usersService.findByRefreshToken(refreshTokenValue);
     if (!user || !user.refresh_token?.includes(refreshTokenValue)) {
       return; // Gracefully handle invalid tokens

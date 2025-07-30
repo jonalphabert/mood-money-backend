@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 describe('CurrenciesController', () => {
   let controller: CurrenciesController;
-  let service: CurrenciesService;
 
   const mockDatabaseRow = {
     currency_id: 1,
@@ -42,7 +41,6 @@ describe('CurrenciesController', () => {
       .compile();
 
     controller = module.get<CurrenciesController>(CurrenciesController);
-    service = module.get<CurrenciesService>(CurrenciesService);
   });
 
   it('should be defined', () => {

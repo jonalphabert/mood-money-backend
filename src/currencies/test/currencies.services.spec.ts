@@ -37,9 +37,7 @@ describe('CurrenciesService', () => {
     }).compile();
 
     service = moduleRef.get<CurrenciesService>(CurrenciesService);
-    repository = moduleRef.get(
-      CurrencyRepository,
-    ) as jest.Mocked<CurrencyRepository>;
+    repository = moduleRef.get(CurrencyRepository);
   });
 
   afterEach(() => {

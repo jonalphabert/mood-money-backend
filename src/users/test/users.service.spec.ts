@@ -40,7 +40,7 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    repository = module.get(UsersRepository) as jest.Mocked<UsersRepository>;
+    repository = module.get(UsersRepository);
   });
 
   describe('findAll', () => {

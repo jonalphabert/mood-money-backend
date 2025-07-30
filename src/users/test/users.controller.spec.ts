@@ -39,7 +39,7 @@ describe('UsersController', () => {
       .compile();
 
     controller = module.get<UsersController>(UsersController);
-    service = module.get(UsersService) as jest.Mocked<UsersService>;
+    service = module.get(UsersService);
   });
 
   describe('getProfile', () => {

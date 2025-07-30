@@ -39,7 +39,7 @@ describe('EmailService', () => {
     }).compile();
 
     service = module.get<EmailService>(EmailService);
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    configService = module.get(ConfigService);
   });
 
   describe('constructor', () => {
@@ -74,7 +74,7 @@ describe('EmailService', () => {
         return key === 'NODE_ENV' ? 'test' : undefined;
       });
 
-      const emailService = new EmailService(configService);
+      new EmailService(configService);
 
       // Wait for async setup
       await new Promise((resolve) => setTimeout(resolve, 0));
